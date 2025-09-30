@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/TECNOLOGIA
+    username: root
+    password: root
+  sql:
+    init:
+      platform: mysql
+      mode: always
+  main:
+    web-application-type: reactive
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    path: /v3/api-docs
+
+appDescription: "Bootcamp tecnology API"
+appVersion: "1.0.0"
