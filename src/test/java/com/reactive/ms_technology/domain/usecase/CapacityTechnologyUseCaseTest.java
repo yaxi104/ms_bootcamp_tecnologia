@@ -14,9 +14,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class CapacityTechnologyUseCaseTest {
@@ -116,5 +123,75 @@ class CapacityTechnologyUseCaseTest {
         StepVerifier.create(captor.getValue())
                 .expectNext(1L, 2L)
                 .verifyComplete();
+    }
+
+    @Test
+    void findByCapacityIdsShouldReturnMappedTechnologies() {
+        Long id1 = 1L;
+        Long id2 = 2L;
+
+        CapacityTechnology capTech1 = new CapacityTechnology(null, id1, 101L);
+        CapacityTechnology capTech2 = new CapacityTechnology(null, id1, 102L);
+        CapacityTechnology capTech3 = new CapacityTechnology(null, id2, 201L);
+
+        TechnologyCapacity tech1 = new TechnologyCapacity(101L, "Java");
+        TechnologyCapacity tech2 = new TechnologyCapacity(102L, "Python");
+        TechnologyCapacity tech3 = new TechnologyCapacity(201L, "Go");
+
+        when(capacityTechnologyPersistencePort.findByCapacityId(id1)).thenReturn(Flux.just(capTech1, capTech2));
+        when(capacityTechnologyPersistencePort.findByCapacityId(id2)).thenReturn(Flux.just(capTech3));
+
+        when(technologyPersistencePort.findAlByTechnologyId(any()))
+                .thenReturn(Flux.just(tech1, tech2, tech3));
+
+        Mono<Map<Long, List<TechnologyCapacity>>> result = useCase.findByCapacityIds(List.of(id1, id2));
+
+        StepVerifier.create(result)
+                .assertNext(map -> {
+                    assertEquals(2, map.size());
+                    assertTrue(map.get(id1).containsAll(List.of(tech1, tech2)));
+                    assertTrue(map.get(id2).contains(tech3));
+                })
+                .verifyComplete();
+
+        verify(capacityTechnologyPersistencePort).findByCapacityId(id1);
+        verify(capacityTechnologyPersistencePort).findByCapacityId(id2);
+        verify(technologyPersistencePort, times(2)).findAlByTechnologyId(any());
+    }
+
+    @Test
+    void findByCapacityIdsShouldReturnEmptyMapWhenInputIsNullOrEmpty() {
+        Mono<Map<Long, List<TechnologyCapacity>>> result1 = useCase.findByCapacityIds(null);
+        Mono<Map<Long, List<TechnologyCapacity>>> result2 = useCase.findByCapacityIds(List.of());
+
+        StepVerifier.create(result1)
+                .expectNext(Map.of())
+                .verifyComplete();
+
+        StepVerifier.create(result2)
+                .expectNext(Map.of())
+                .verifyComplete();
+
+        verifyNoInteractions(capacityTechnologyPersistencePort);
+        verifyNoInteractions(technologyPersistencePort);
+    }
+
+    @Test
+    void findByCapacityIdsShouldReturnEmptyListWhenNoTechnologiesFound() {
+        Long id = 1L;
+
+        when(capacityTechnologyPersistencePort.findByCapacityId(id)).thenReturn(Flux.empty());
+
+        Mono<Map<Long, List<TechnologyCapacity>>> result = useCase.findByCapacityIds(List.of(id));
+
+        StepVerifier.create(result)
+                .assertNext(map -> {
+                    assertEquals(1, map.size());
+                    assertEquals(List.of(), map.get(id));
+                })
+                .verifyComplete();
+
+        verify(capacityTechnologyPersistencePort).findByCapacityId(id);
+        verify(technologyPersistencePort, never()).findAlByTechnologyId(any());
     }
 }

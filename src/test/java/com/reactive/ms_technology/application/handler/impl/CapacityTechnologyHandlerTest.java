@@ -17,6 +17,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -85,5 +89,51 @@ class CapacityTechnologyHandlerTest {
 
         verify(servicePort).findTechnologiesByCapacityId(capacityId);
         verify(responseMapper).toResponse(domain);
+    }
+
+    @Test
+    void findByCapacityIdsTest() {
+        Long id1 = 1L;
+        Long id2 = 2L;
+
+        TechnologyCapacity tech1 = new TechnologyCapacity(101L, "Java");
+        TechnologyCapacity tech2 = new TechnologyCapacity(102L, "Python");
+
+        TechnologyCapacity tech3 = new TechnologyCapacity(201L, "Go");
+
+        TechnologyCapacityResponse resp1 = new TechnologyCapacityResponse();
+        resp1.setId(101L);
+        resp1.setName("Java");
+
+        TechnologyCapacityResponse resp2 = new TechnologyCapacityResponse();
+        resp2.setId(102L);
+        resp2.setName("Python");
+
+        TechnologyCapacityResponse resp3 = new TechnologyCapacityResponse();
+        resp3.setId(201L);
+        resp3.setName("Go");
+
+        when(servicePort.findTechnologiesByCapacityId(id1)).thenReturn(Flux.just(tech1, tech2));
+        when(servicePort.findTechnologiesByCapacityId(id2)).thenReturn(Flux.just(tech3));
+
+        when(responseMapper.toResponse(tech1)).thenReturn(resp1);
+        when(responseMapper.toResponse(tech2)).thenReturn(resp2);
+        when(responseMapper.toResponse(tech3)).thenReturn(resp3);
+
+        Mono<Map<Long, List<TechnologyCapacityResponse>>> result = handler.findByCapacityIds(List.of(id1, id2));
+
+        StepVerifier.create(result)
+                .assertNext(map -> {
+                    assertEquals(2, map.size());
+                    assertEquals(List.of(resp1, resp2), map.get(id1));
+                    assertEquals(List.of(resp3), map.get(id2));
+                })
+                .verifyComplete();
+
+        verify(servicePort).findTechnologiesByCapacityId(id1);
+        verify(servicePort).findTechnologiesByCapacityId(id2);
+        verify(responseMapper).toResponse(tech1);
+        verify(responseMapper).toResponse(tech2);
+        verify(responseMapper).toResponse(tech3);
     }
 }
