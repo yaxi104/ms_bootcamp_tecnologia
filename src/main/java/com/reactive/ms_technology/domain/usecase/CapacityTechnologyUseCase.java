@@ -10,7 +10,9 @@ import com.reactive.ms_technology.domain.utils.ValidateRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class CapacityTechnologyUseCase implements ICapacityTechnologyServicePort {
 
@@ -53,4 +55,29 @@ public class CapacityTechnologyUseCase implements ICapacityTechnologyServicePort
                         ? Flux.empty()
                         : technologyPersistencePort.findAlByTechnologyId(Flux.fromIterable(ids)));
     }
+
+    @Override
+    public Mono<Map<Long, List<TechnologyCapacity>>> findByCapacityIds(List<Long> capacityIds) {
+        if (capacityIds == null || capacityIds.isEmpty()) {
+            return Mono.just(Map.of());
+        }
+
+        return Flux.fromIterable(capacityIds)
+                .flatMap(capacityId ->
+                        capacityTechnologyPersistencePort.findByCapacityId(capacityId)
+                                .map(CapacityTechnology::getTechnologyId)
+                                .collectList()
+                                .flatMap(techIds -> {
+                                    if (techIds.isEmpty()) {
+                                        return Mono.just(new ArrayList<TechnologyCapacity>());
+                                    }
+                                    return technologyPersistencePort.findAlByTechnologyId(Flux.fromIterable(techIds))
+                                            .collectList()
+                                            .map(techList -> techList);
+                                })
+                                .map(techList -> Map.entry(capacityId, techList))
+                )
+                .collectMap(Map.Entry::getKey, Map.Entry::getValue);
+    }
+
 }

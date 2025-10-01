@@ -26,6 +26,9 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/ms-technology/capacity")
 @RequiredArgsConstructor
@@ -77,5 +80,24 @@ public class CapacityRestTechnologyController {
             @PathVariable("capacityId") Long capacityId
     ) {
         return capacityTechnologyHandler.findTechnologiesByCapacityId(capacityId);
+    }
+
+    @Operation(
+            summary = "Get technologies by multiple capacity IDs",
+            description = "Returns a map of capacity IDs to their associated technologies"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Map of capacityId to list of technologies",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = TechnologyCapacityResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
+    @PostMapping("/by-capacity-ids")
+    public Mono<ResponseEntity<Map<Long, List<TechnologyCapacityResponse>>>> findTechnologiesByCapacityIds(
+            @RequestBody List<Long> capacityIds
+    ) {
+        return capacityTechnologyHandler.findByCapacityIds(capacityIds)
+                .map(ResponseEntity::ok);
     }
 }

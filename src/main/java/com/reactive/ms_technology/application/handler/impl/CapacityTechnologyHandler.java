@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class CapacityTechnologyHandler implements ICapacityTechnologyHandler {
@@ -30,5 +33,16 @@ public class CapacityTechnologyHandler implements ICapacityTechnologyHandler {
     public Flux<TechnologyCapacityResponse> findTechnologiesByCapacityId(Long capacityId) {
         return capacityTechnologyServicePort.findTechnologiesByCapacityId(capacityId)
                 .map(capacityTechnologyResponseMapper::toResponse);
+    }
+
+    @Override
+    public Mono<Map<Long, List<TechnologyCapacityResponse>>> findByCapacityIds(List<Long> capacityIds) {
+        return Flux.fromIterable(capacityIds)
+                .flatMap(id -> capacityTechnologyServicePort.findTechnologiesByCapacityId(id)
+                        .map(capacityTechnologyResponseMapper::toResponse)
+                        .collectList()
+                        .map(list -> Map.entry(id, list))
+                )
+                .collectMap(Map.Entry::getKey, Map.Entry::getValue);
     }
 }
