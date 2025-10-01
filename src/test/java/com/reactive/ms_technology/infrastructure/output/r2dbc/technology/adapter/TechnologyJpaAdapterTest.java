@@ -13,10 +13,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 class TechnologyJpaAdapterTest {
     private ITechnologyRepository tecnologyRepository;
@@ -35,9 +37,9 @@ class TechnologyJpaAdapterTest {
         Technology domain = TechnologyMockFactory.createDefaultTecnology();
         TechnologyEntity entity = TechnologyMockFactory.createDefaultTecnologyEntity();
 
-        Mockito.when(tecnologyMapper.toEntity(domain)).thenReturn(entity);
-        Mockito.when(tecnologyRepository.save(entity)).thenReturn(Mono.just(entity));
-        Mockito.when(tecnologyMapper.toDomain(entity)).thenReturn(domain);
+        when(tecnologyMapper.toEntity(domain)).thenReturn(entity);
+        when(tecnologyRepository.save(entity)).thenReturn(Mono.just(entity));
+        when(tecnologyMapper.toDomain(entity)).thenReturn(domain);
 
         StepVerifier.create(tecnologyJpaAdapter.save(domain))
                 .expectNext(domain)
@@ -64,10 +66,10 @@ class TechnologyJpaAdapterTest {
         domain2.setName("Python");
         domain2.setDescription("Lenguaje versátil");
 
-        Mockito.when(tecnologyRepository.countAll()).thenReturn(Mono.just(10L));
-        Mockito.when(tecnologyRepository.findAllOrderedByName(2, 0)).thenReturn(Flux.just(entity1, entity2));
-        Mockito.when(tecnologyMapper.toDomain(entity1)).thenReturn(domain1);
-        Mockito.when(tecnologyMapper.toDomain(entity2)).thenReturn(domain2);
+        when(tecnologyRepository.countAll()).thenReturn(Mono.just(10L));
+        when(tecnologyRepository.findAllOrderedByName(2, 0)).thenReturn(Flux.just(entity1, entity2));
+        when(tecnologyMapper.toDomain(entity1)).thenReturn(domain1);
+        when(tecnologyMapper.toDomain(entity2)).thenReturn(domain2);
 
         StepVerifier.create(tecnologyJpaAdapter.findAll(pageInfo))
                 .assertNext(result -> {
@@ -92,10 +94,31 @@ class TechnologyJpaAdapterTest {
 
     @Test
     void existsByNameSuccessTest() {
-        Mockito.when(tecnologyRepository.existsByName("Java")).thenReturn(Mono.just(true));
+        when(tecnologyRepository.existsByName("Java")).thenReturn(Mono.just(true));
 
         StepVerifier.create(tecnologyJpaAdapter.existsByName("Java"))
                 .expectNext(true)
+                .verifyComplete();
+    }
+
+    @Test
+    void findAlByTechnologyIdSuccessTest() {
+        TechnologyEntity entity1 = new TechnologyEntity();
+        entity1.setId(1L);
+        entity1.setName("Java");
+
+        TechnologyEntity entity2 = new TechnologyEntity();
+        entity2.setId(2L);
+        entity2.setName("Python");
+
+        when(tecnologyRepository.findAllById(Arrays.asList(1L, 2L)))
+                .thenReturn(Flux.just(entity1, entity2));
+
+        Flux<Long> idsFlux = Flux.just(1L, 2L);
+
+        StepVerifier.create(tecnologyJpaAdapter.findAlByTechnologyId(idsFlux))
+                .expectNextMatches(tc -> tc.getId().equals(1L) && tc.getName().equals("Java"))
+                .expectNextMatches(tc -> tc.getId().equals(2L) && tc.getName().equals("Python"))
                 .verifyComplete();
     }
 }

@@ -25,7 +25,7 @@ public class TechnologyUseCase implements ITechnologyServicePort {
                 .then(ValidateRequest.checkNotBlank(technology.getDescription()))
                 .then(ValidateRequest.checkNotLengthValid(technology.getDescription(), Constants.MAX_LENGHT_DESCRIPTION))
                 .then(technologyPersistencePort.existsByName(technology.getName()))
-                .flatMap(exists -> exists
+                .flatMap(exists -> Boolean.TRUE.equals(exists)
                         ? Mono.error(new TechnologyAlreadyExistsException())
                         : technologyPersistencePort.save(technology));
     }

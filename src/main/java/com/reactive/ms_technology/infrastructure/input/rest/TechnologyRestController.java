@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,19 +34,17 @@ public class TechnologyRestController {
     private final ITechnologyHandler technologyHandler;
 
     @Operation(summary = "Create a new Technology", description = "Registers a new technology if it does not exist yet.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Technology created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request",
-                    content = @Content(mediaType = "application/json", examples = @ExampleObject(
-                            name = "Bad Request Example",
-                            value = "{\"Message\": \"The request contains invalid data. Please check the submitted fields and try again\"}"
-                    ))),
-            @ApiResponse(responseCode = "409", description = "Conflict - Technology already exists",
-                    content = @Content(mediaType = "application/json", examples = @ExampleObject(
-                            name = "Conflict Example",
-                            value = "{\"Message\": \"Technology with this name already exists\"}"
-                    )))
-    })
+    @ApiResponse(responseCode = "201", description = "Technology created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = "application/json", examples = @ExampleObject(
+                    name = "Bad Request Example",
+                    value = "{\"Message\": \"The request contains invalid data. Please check the submitted fields and try again\"}"
+            )))
+    @ApiResponse(responseCode = "409", description = "Conflict - Technology already exists",
+            content = @Content(mediaType = "application/json", examples = @ExampleObject(
+                    name = "Conflict Example",
+                    value = "{\"Message\": \"Technology with this name already exists\"}"
+            )))
     @PostMapping
     public Mono<ResponseEntity<Void>> saveTechnology(@Valid @RequestBody TechnologyRequest request) {
         return technologyHandler.saveTechnology(request)
@@ -55,10 +52,8 @@ public class TechnologyRestController {
     }
 
     @Operation(summary = "Get paginated technologies", description = "Returns a paginated list of registered technologies")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Paginated list of technologies",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageResponse.class)))
-    })
+    @ApiResponse(responseCode = "200", description = "Paginated list of technologies",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageResponse.class)))
     @GetMapping("/all")
     public Mono<PageResponse<TechnologyResponse>> findAllTechnologyPage(
             @Parameter(description = "Número de página", example = "0") @RequestParam(defaultValue = "0") Integer page,

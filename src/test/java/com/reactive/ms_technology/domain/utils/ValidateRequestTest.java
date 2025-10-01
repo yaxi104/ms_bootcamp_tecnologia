@@ -4,6 +4,8 @@ import com.reactive.ms_technology.domain.exception.BadRequestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import reactor.test.StepVerifier;
 
 class ValidateRequestTest {
@@ -34,4 +36,20 @@ class ValidateRequestTest {
                 .expectError(BadRequestException.class)
                 .verify();
     }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(longs = {0, -1})
+    void checkIdFailTest(Long arg) {
+        StepVerifier.create(ValidateRequest.checkId(arg))
+                .expectError(BadRequestException.class)
+                .verify();
+    }
+
+    @Test
+    void checkIdSuccessTest() {
+        StepVerifier.create(ValidateRequest.checkId(1L))
+                .verifyComplete();
+    }
+
 }
