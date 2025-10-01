@@ -3,7 +3,7 @@ server:
 
 spring:
   r2dbc:
-    url: r2dbc:mysql://localhost:3306/TECNOLOGIA
+    url: r2dbc:mysql://localhost:3306/TECNOLOGIA?serverZoneId=America%2FBogota
     username: root
     password: root
   sql:
@@ -20,5 +20,5 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
-appDescription: "Bootcamp tecnology API"
+appDescription: "Bootcamp technology API"
 appVersion: "1.0.0"
